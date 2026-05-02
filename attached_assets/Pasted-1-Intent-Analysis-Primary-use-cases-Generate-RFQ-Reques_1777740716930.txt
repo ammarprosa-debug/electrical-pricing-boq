@@ -1,0 +1,377 @@
+1) Intent Analysis
+
+Primary use cases
+
+Generate RFQ (Request for Quotation) Excel files for building systems (Public Address/PA, Evacuation, Master Clock, Digital Signage, Access Control, Fire Alarm, Networking, BMS).
+
+Normalize and standardize RFQ units and columns (LS instead of LOT, NO instead of Each/EA, Brand column immediately after Quantity).
+
+Extract missing system components from high-level specifications and convert them into RFQ line items.
+
+Populate RFQ line items with recommended brands per item.
+
+Produce supplier-ready Excel files and email-ready RFQ instructions.
+
+Repeated tasks
+
+Converting conversation content and BOM lists into structured Excel-ready RFQ tables.
+
+Translating descriptions into Arabic and adding Arabic notes column.
+
+Replacing unit codes (LOT → LS, Each/EA → NO).
+
+Adding/placing a Brand column immediately after Quantity.
+
+Creating separate or merged RFQ files for different systems.
+
+Adding installation/testing/commissioning and contractor items as LS.
+
+User intent patterns
+
+User provides lists of line items and asks to convert them into Excel RFQ format.
+
+User requests normalization of units and consistent column ordering.
+
+User asks to fill the Brand column for every line item with recommended manufacturers.
+
+User requests files to be saved and reused for future quotations.
+
+User prefers Arabic labels and bilingual notes in RFQ files.
+
+Expected outputs (format + level of detail)
+
+Primary output: Production-ready Excel spreadsheets (tables) with columns: Line item no., Description of Goods / Services, Brand (immediately after Quantity), Unit (LS/NO), Quantity required, Unit Price (SAR), Total Price (SAR), Availability date, ملاحظات (بالعربي).
+
+Secondary outputs: Short RFQ instruction paragraph (Arabic), suggested email body (Arabic/English), and a list of preferred suppliers or brands.
+
+Level of detail: Full BOM coverage (every line item from provided ranges), Arabic translations for notes, Brand filled for each item, units normalized, installation/testing items as LS.
+
+Domain
+
+Electrical/AV/Building systems procurement and estimation: RFQ creation for PA/VA, Master Clock, Digital Signage, Access Control, Fire Alarm, Networking, and BMS.
+
+2) SKILL.md
+
+name: rfq_production_and_branding description: Convert conversational BOMs and system descriptions into production-ready RFQ Excel tables, normalize units, add Arabic notes, and populate Brand column. Trigger when user supplies BOM lists, system descriptions, or asks to export RFQ/brands to Excel.
+
+Instructions
+
+Step-by-step execution logic
+
+Input parsing
+
+Accept raw conversation text, pasted BOM, or structured list of line items.
+
+Detect system sections (e.g., 16.17 Public Address, 16.20 Access Control, 16.21 Fire Alarm, 16.22 Networking, 15.22-1 BMS).
+
+Normalization
+
+Convert unit tokens: LOT → LS, Each/EA → NO.
+
+Ensure Brand column is placed immediately after Quantity required.
+
+Completeness check
+
+Compare high-level system description to detailed line items; extract missing components (e.g., Main Rack, Zone Controller, Audio Matrix, Amplifiers, Batteries, Fire-rated cables, Conduits, Interfacing works).
+
+Add missing components as new line items with unique line item numbers (use suffixes like .A, .B).
+
+Brand mapping
+
+Use conversation-derived brand mapping rules to assign a recommended brand to each line item.
+
+If item is installation/testing/commissioning, set Brand = System Integrator (Contractor).
+
+If item is generic consumable (screws, cables), set Brand = Generic / OEM.
+
+Arabic notes
+
+For each Description, produce a concise Arabic translation and place it in ملاحظات (بالعربي).
+
+Table assembly
+
+Build table with columns in this exact order:
+
+Line item no.
+
+Description of Goods / Services
+
+Brand
+
+Unit
+
+Quantity required
+
+Unit Price (SAR)
+
+Total Price (SAR)
+
+Availability date
+
+ملاحظات (بالعربي)
+
+Header
+
+Add Arabic header title and instruction paragraph above the table.
+
+Export
+
+Produce an Excel file (XLSX) named according to the project and system (e.g., RFQ_PublicAddress_EvacuationSystem.xlsx or RFQ_Brands.xlsx).
+
+Keep Unit Price, Total Price, Availability date blank for supplier input.
+
+Deliverables
+
+Return the Excel file and a short email body (Arabic) for RFQ distribution.
+
+Decision rules
+
+If user requests merging with existing RFQ files, append new items and preserve column order.
+
+If user asks to “save preferences,” persist unit normalization and column order as durable preferences.
+
+If a description contains ambiguous quantities or units, default to NO for countable devices and LS for system-level items.
+
+For brand assignment, prefer the conversation-provided mapping; if missing, use domain defaults:
+
+PA/VA → Bosch / TOA / Valcom
+
+Access Control → HID / ASSA ABLOY
+
+Fire Alarm → Johnson Controls / Honeywell / Siemens / Bosch
+
+Networking → Cisco / Systimax / FINOSEL
+
+BMS → Johnson Controls / Siemens / Honeywell
+
+Constraints
+
+Do not auto-fill prices or availability dates.
+
+Keep Arabic translations concise (one short sentence or phrase).
+
+Maintain exact column order and naming.
+
+Use LS. token for lump-sum items and NO. for countable items.
+
+Error handling
+
+If input lacks line item numbers, auto-generate sequential numbers with system prefix (e.g., 16.17.A1).
+
+If a requested brand is ambiguous or multiple brands provided, list them separated by /.
+
+If user requests export but file creation fails, return a structured error message with steps to retry.
+
+Output Format
+
+Produce an Excel file with:
+
+Header (Arabic):
+
+Title: طلب عرض سعر RFQ ... (system-specific)
+
+Instruction paragraph in Arabic.
+
+Table columns (exact order):
+
+Line item no.
+
+Description of Goods / Services
+
+Brand
+
+Unit
+
+Quantity required
+
+Unit Price (SAR)
+
+Total Price (SAR)
+
+Availability date
+
+ملاحظات (بالعربي)
+
+Cell rules:
+
+Unit must be LS. or NO..
+
+Brand must be filled for every row (use Generic / OEM or System Integrator (Contractor) where appropriate).
+
+Price and availability cells left blank.
+
+Examples
+
+Example 1 — Input
+
+User pastes PA system description and list 16.17.1-16.17.7 and asks: "حولها الي RFQ" and "احفظ عندك... LS instead of LOT, NO instead of Each".
+
+Example 1 — Output
+
+Excel file RFQ_PublicAddress_EvacuationSystem.xlsx with header, table columns in exact order, units normalized to NO. and LS., Brand column after Quantity filled (e.g., Bosch, TOA), Arabic notes filled.
+
+Example 2 — Input
+
+User provides full BOM from 16.17.A to 16.22.33 and asks: "املي الخانة بتع البرند للكل ايتم".
+
+Example 2 — Output
+
+Excel file RFQ_Brands.xlsx with every line item from 16.17.A to 16.22.33 and 15.22-1, Brand column populated per mapping (e.g., Cisco for Catalyst items, Systimax for fiber), units normalized, Arabic header and instruction.
+
+3) Test Cases (JSON)
+
+[
+  {
+    "id": 1,
+    "prompt": "Convert the PA system items 16.17.1-16.17.7 into an RFQ Excel. Use LS for installation and NO for devices. Add Brand column after Quantity and fill brands.",
+    "expected_behavior": "Produce an Excel file with header, table columns in exact order, units normalized (LS./NO.), Brand column populated (Bosch/TOA/Shure/System Integrator), Arabic notes included, price and availability blank."
+  },
+  {
+    "id": 2,
+    "prompt": "I pasted BOM from 16.17.A to 16.22.33 and 15.22-1. Fill the Brand column for every item and export to Excel.",
+    "expected_behavior": "Return an Excel file containing all items with Brand column filled according to mapping (FINOSEL, Bosch, Cisco, Systimax, Johnson Controls, etc.), units normalized, Arabic notes column present, header and instruction paragraph in Arabic."
+  },
+  {
+    "id": 3,
+    "prompt": "Add missing components from the PA system description (Main Rack, Zone Controller, Audio Matrix, Amplifiers, Batteries, Fire-rated cables, Conduits, Interfacing works) into the RFQ and assign brands.",
+    "expected_behavior": "Append new line items 16.17.A–16.17.J with units LS/NO as appropriate, Brand column filled (FINOSEL, Bosch, TOA, Exide/Trojan, Prysmian, Legrand, System Integrator), Arabic notes added, exportable Excel."
+  },
+  {
+    "id": 4,
+    "prompt": "Normalize units across an existing RFQ: replace LOT with LS and Each/EA with NO, and move Brand column to immediately after Quantity.",
+    "expected_behavior": "Return modified RFQ table with all LOT → LS, Each/EA → NO, Brand column repositioned after Quantity, and a summary of changes applied."
+  },
+  {
+    "id": 5,
+    "prompt": "User asks to save preferences: always use LS for system items, NO for countable items, and always place Brand after Quantity. Then create RFQ for Digital Signage items 16.19.1-16.19.14.",
+    "expected_behavior": "Persist preferences, produce Excel for Digital Signage with units LS/NO per rule, Brand column after Quantity filled (Samsung, LG, Peerless-AV, Scala), Arabic header and notes, and confirm preferences saved."
+  },
+  {
+    "id": 6,
+    "prompt": "Edge case: Input list lacks line item numbers but contains descriptions for PA rack, amplifiers, and speakers. Create RFQ and auto-generate line item numbers.",
+    "expected_behavior": "Generate sequential line item numbers with prefix (e.g., 16.17.A1, 16.17.A2...), build Excel table with Brand mapping, units normalized, Arabic notes, and a note explaining auto-generated numbers."
+  }
+]
+
+4) Evaluation Criteria
+
+Qualitative Criteria
+
+Accuracy: Brands assigned must match the conversation-provided mapping for each item.
+
+Completeness: All provided line items and any missing components extracted from descriptions must appear in the RFQ.
+
+Professional formatting: Excel header, Arabic instruction, exact column order, and blank price/availability cells must be present.
+
+Localization: Arabic notes must be present and concise for each item.
+
+Quantitative Assertions
+
+[
+  { "text": "Header contains Arabic title and instruction paragraph", "type": "structure", "expected": true },
+  { "text": "Table columns appear in exact order: Line item no., Description, Brand, Unit, Quantity, Unit Price, Total Price, Availability date, ملاحظات (بالعربي)", "type": "structure", "expected": true },
+  { "text": "All original line items from user (16.17A..16.22.33 and 15.22-1) are present", "type": "content", "expected": true },
+  { "text": "Units normalized: no 'LOT' or 'Each' remain; only 'LS.' and 'NO.' used", "type": "content", "expected": true },
+  { "text": "Brand column is populated for every row", "type": "content", "expected": true },
+  { "text": "Unit Price, Total Price, Availability date cells are blank", "type": "content", "expected": true },
+  { "text": "Arabic notes column contains a non-empty translation for each item", "type": "content", "expected": true },
+  { "text": "File exported as XLSX with correct filename pattern", "type": "structure", "expected": true }
+]
+
+5) Baseline Comparison Plan
+
+Without Skill (manual process)
+
+Time: Manual conversion of conversation to Excel typically 60–180 minutes depending on BOM size.
+
+Errors: Higher risk of inconsistent units, missing components, misplaced Brand column, missing Arabic translations.
+
+Consistency: Low; different RFQs may use different unit tokens and column orders.
+
+With Skill
+
+Time: Automated conversion 1–5 minutes to assemble and export Excel.
+
+Errors: Units normalized automatically; Brand mapping applied consistently; missing components detected and added.
+
+Consistency: High; every RFQ follows the same column order and naming conventions.
+
+Expected improvements
+
+Time reduction: ~90% faster for medium BOMs.
+
+Error reduction: Significant decrease in unit inconsistencies and missing Brand entries.
+
+Quality uplift: Professional, supplier-ready RFQ with bilingual notes and standardized units.
+
+Key differences
+
+Column order enforcement (Brand after Quantity) vs. ad-hoc placement.
+
+Unit normalization (LS./NO.) vs. mixed tokens.
+
+Automated brand mapping vs. manual brand lookup.
+
+6) Iteration Plan
+
+When tests fail or user feedback indicates issues
+
+Failed test: missing items
+
+Action: Improve parsing heuristics to extract components from descriptive paragraphs (look for keywords: rack, matrix, amplifier, battery, cable, conduit, interface).
+
+Failed test: incorrect brand mapping
+
+Action: Add a brand-mapping override table and allow user to supply preferred brand list; implement confidence scoring and flag ambiguous mappings for review.
+
+Failed test: Arabic translation quality
+
+Action: Integrate a short translation QA step: produce two-word Arabic phrase + alternate synonyms; allow user to pick preferred phrasing.
+
+Failed test: file export errors
+
+Action: Add retry logic and produce a downloadable link or alternative CSV fallback.
+
+Planned improvements
+
+Add a Preferred Supplier column option and populate with regional distributors.
+
+Allow user to supply a custom brand mapping CSV to override defaults.
+
+Add validation rules in the Excel (data validation for Unit values LS./NO., dropdown for Brand).
+
+Add an optional price-template that auto-calculates Total Price when Unit Price is filled.
+
+Release cadence
+
+Minor fixes weekly (parsing, translations).
+
+Feature additions (preferred suppliers, validation) monthly.
+
+7) Trigger Optimization
+
+SHOULD TRIGGER examples
+
+"حولهم الي اكسيل" (Convert them to Excel) with BOM pasted.
+
+"Export this message to a Excel document" when BOM or RFQ content is provided.
+
+"املي الخانة بتع البرند للكل ايتم" (Fill the Brand column for all items).
+
+"احفظ عندك... LS instead of LOT and NO instead of Each" (save preferences and apply).
+
+"Add missing components from the PA system description into the RFQ."
+
+SHOULD NOT TRIGGER examples
+
+Casual conversation about vendors without BOM (e.g., "Which brands are good for PA systems?") — this is a research/advice request, not an RFQ export.
+
+Requests to generate images, charts, or unrelated file types (e.g., "Make a poster") — different skill.
+
+Single-question clarifications unrelated to RFQ creation (e.g., "What does EN54 mean?") — use a knowledge lookup skill instead.
+
+Requests to create or edit images or to access user files not provided.
+
+Refined skill description (optimized for correct triggering)
+
+Convert user-provided BOMs, system descriptions, or RFQ text into production-ready Excel RFQ files. Normalize units to LS. and NO., insert a Brand column immediately after Quantity, add concise Arabic notes, detect and add missing system components from descriptive text, and populate recommended brands per item. Trigger when the user supplies a BOM, asks to export RFQ/brands to Excel, or requests unit normalization and brand population.
