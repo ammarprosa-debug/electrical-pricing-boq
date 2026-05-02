@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, FolderKanban, Database, Settings,
-  Bot, BarChart3, ChevronRight, Zap, BrainCircuit
+  Bot, BarChart3, ChevronRight, Zap, BrainCircuit,
+  FileText, PackageSearch, Sparkles,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useHealthCheck } from "@workspace/api-client-react";
@@ -21,9 +22,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
     {
       label: "التحليل الذكي",
       items: [
-        { href: "/agents", label: "وكلاء الذكاء", labelEn: "AI Agents", icon: Bot },
-        { href: "/takeoff", label: "تفصيل المواد", labelEn: "Material Takeoff", icon: BarChart3 },
+        { href: "/agents", label: "وكلاء الذكاء", labelEn: "AI Agents (1–9)", icon: Bot },
         { href: "/intelligence", label: "استخبارات المشروع", labelEn: "Project Intelligence", icon: BrainCircuit },
+        { href: "/takeoff", label: "تفصيل المواد", labelEn: "Material Takeoff", icon: BarChart3 },
+      ],
+    },
+    {
+      label: "المقايسة والمواد",
+      items: [
+        { href: "/boq-report", label: "مقايسة احترافية", labelEn: "BOQ Report (16–17)", icon: FileText },
+        { href: "/materials-db", label: "إدارة قاعدة البيانات", labelEn: "Materials Manager (15)", icon: Sparkles },
         { href: "/materials", label: "قاعدة الأسعار", labelEn: "Price Database", icon: Database },
       ],
     },

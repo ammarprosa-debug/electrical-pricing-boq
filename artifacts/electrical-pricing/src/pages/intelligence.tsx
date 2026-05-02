@@ -12,7 +12,9 @@ import {
   AlertTriangle, Shield, Brain, TrendingDown, Search, Handshake,
   Zap, RefreshCw, CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp,
   AlertOctagon, Package, BarChart3, DollarSign, ArrowDownCircle,
+  Users, Truck, Wrench, FileText, ExternalLink,
 } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -527,6 +529,41 @@ export default function IntelligencePage() {
             </AgentCard>
 
           </div>
+
+          {/* ── Agents 10-14 Banner ──────────────────────────────────────── */}
+          <div className="mt-6 rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/50 p-5">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <h3 className="font-bold text-blue-800 text-base">وكلاء المقايسة الاحترافية (10-14)</h3>
+                </div>
+                <p className="text-sm text-blue-700/80 max-w-xl">
+                  تحسين تكلفة العمالة، تجميع الموردين، هندسة القيمة، جدولة المراحل، وتقسيم BOQ للمقاولين الفرعيين
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {[
+                    { icon: <Users className="w-3 h-3" />, label: "10 تحسين العمالة" },
+                    { icon: <Truck className="w-3 h-3" />, label: "11 تجميع التوريد" },
+                    { icon: <Wrench className="w-3 h-3" />, label: "12 هندسة القيمة" },
+                    { icon: <Clock className="w-3 h-3" />, label: "13 جدولة المراحل" },
+                    { icon: <BarChart3 className="w-3 h-3" />, label: "14 تقسيم مقاولي الباطن" },
+                  ].map(a => (
+                    <span key={a.label} className="inline-flex items-center gap-1 text-xs bg-white border border-blue-200 rounded-full px-2.5 py-0.5 text-blue-700 font-medium">
+                      {a.icon}{a.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <Link href={`/boq-report?project=${projectId}`}>
+                <Button className="gap-2 bg-blue-600 hover:bg-blue-700 shrink-0">
+                  <ExternalLink className="w-4 h-4" />
+                  فتح صفحة BOQ الاحترافية
+                </Button>
+              </Link>
+            </div>
+          </div>
+
         </div>
       )}
     </div>

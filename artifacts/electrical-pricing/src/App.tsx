@@ -14,6 +14,8 @@ import Materials from "@/pages/materials";
 import AgentsPage from "@/pages/agents";
 import TakeoffPage from "@/pages/takeoff";
 import IntelligencePage from "@/pages/intelligence";
+import BoqReportPage from "@/pages/boq-report";
+import MaterialsDbPage from "@/pages/materials-db";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,8 @@ function Router() {
         <Route path="/agents" component={AgentsPage} />
         <Route path="/takeoff" component={TakeoffPage} />
         <Route path="/intelligence" component={IntelligencePage} />
+        <Route path="/boq-report" component={BoqReportPage} />
+        <Route path="/materials-db" component={MaterialsDbPage} />
         <Route component={NotFound} />
       </Switch>
     </Shell>

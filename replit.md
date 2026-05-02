@@ -20,7 +20,7 @@ A professional multi-agent AI system that automatically prices electrical projec
 - **Build**: esbuild (CJS bundle)
 - **File upload**: multer (in-memory)
 
-## Architecture — 9-Agent Intelligence Pipeline
+## Architecture — 17-Agent Intelligence Pipeline
 
 ```
 [User uploads BOQ file (CSV/XLSX/PDF)]
@@ -28,18 +28,28 @@ A professional multi-agent AI system that automatically prices electrical projec
 [Document Parser] → Extracts line items, classifies categories
         ↓
 [AI Pricing Agent] → Claude haiku prices batches of 20 items
-        ↓ (Parallel Stage)
+        ↓ (Stage 1: Market & Compliance — parallel)
 [Agent 1] KSA Market Price Comparator  ─┐
 [Agent 2] Compliance & Consistency     ─┤→ priceReviews DB
-        ↓ (Parallel Stage)
+        ↓ (Stage 2: Takeoff — parallel)
 [Agent 3] Material Takeoff (MTO)       ─┐
 [Agent 4] BOM Enrichment               ─┤→ materialTakeoff DB
-        ↓ (Intelligence Stage — parallel)
+        ↓ (Stage 3: Intelligence — parallel)
 [Agent 5] Anomaly Detection (IQR)       → priceReviews (anomaly_detector)
 [Agent 6] Commodity Risk Analyzer       → projectRisk DB
 [Agent 7] Scope Gap Analyzer            → scopeGaps DB
 [Agent 8] Negotiation Strategy          → in-memory result
 [Agent 9] Alternative Materials         → alternatives DB
+        ↓ (Stage 4: BOQ Optimization — parallel)
+[Agent 10] Labor Cost Optimizer         → laborCosts DB
+[Agent 11] Procurement & Supplier Group → procurement DB
+[Agent 12] Value Engineering            → valueEngineering DB
+[Agent 13] Project Timeline & Phasing   → projectTimeline DB
+[Agent 14] Subcontractor BOQ Split      → subcontractorSplit DB
+        ↓ (Stage 5: Professional BOQ Output — sequential)
+[Agent 15] Materials Price Manager      → materialPriceHistory DB (global)
+[Agent 16] BOQ Document Formatter       → boqDocuments DB (HTML output)
+[Agent 17] BOQ Technical Reviewer       → priceReviews + scopeGaps DB
         ↓
 [Report Generator] → CSV/HTML reports (Economical | Standard | Premium)
 ```
@@ -53,12 +63,17 @@ A professional multi-agent AI system that automatically prices electrical projec
 - **SASO compliance checking**: Pass/Warning/Fail per item
 - **Human review queue**: Items with confidence <70% flagged for review
 - **Bilingual UI**: English/Arabic descriptions, RTL support
-- **Agent 5 — Anomaly Detection**: IQR statistical outlier detection, duplicate items, unit mismatches (no AI — pure math)
-- **Agent 6 — Commodity Risk**: Copper/aluminum/steel exposure %, contingency recommendation
-- **Agent 7 — Scope Gap Analysis**: Detects missing required systems (earthing, emergency lighting, lightning protection, etc.)
-- **Agent 8 — Negotiation Strategy**: Bid price, safe floor, payment milestones, AI strategic advice
-- **Agent 9 — Alternative Materials**: Cheaper SASO-compliant equivalents from KSA market + AI suggestions
-- **Project Intelligence page** (`/intelligence`): Unified view of all 5 advanced agents with KPI cards
+- **Agent 10 — Labor Optimizer**: Productivity rates, site-specific adjustments, crew optimization
+- **Agent 11 — Procurement**: Supplier grouping, bulk discounts, lead times per trade
+- **Agent 12 — Value Engineering**: Cost reduction alternatives maintaining SASO compliance
+- **Agent 13 — Timeline**: Phase scheduling, critical path, manpower histogram
+- **Agent 14 — Subcontractor Split**: BOQ split by trade with overhead/profit per subcontractor
+- **Agent 15 — Materials Price Manager**: AI agent to update market prices from KSA signals
+- **Agent 16 — BOQ Formatter**: Generates professional HTML BOQ document (print-ready)
+- **Agent 17 — BOQ Reviewer**: Technical review, price reasonability, scope completeness
+- **Project Intelligence page** (`/intelligence`): Unified view of all 9 basic agents + link to BOQ report
+- **BOQ Report page** (`/boq-report`): Agents 10-14 + BOQ document output (16-17)
+- **Materials DB page** (`/materials-db`): AI-powered materials price management (Agent 15)
 
 ## Database Tables
 
@@ -66,11 +81,18 @@ A professional multi-agent AI system that automatically prices electrical projec
 - `boq_items` — individual BOQ line items with pricing, confidence, compliance, anomaly flags
 - `materials` — Saudi electrical materials price database
 - `conversations` + `messages` — Anthropic AI integration tables
-- `price_reviews` — AI agent review findings (agents 1, 2, 5)
+- `price_reviews` — AI agent review findings (agents 1, 2, 5, 17)
 - `material_takeoff` — sub-component breakdown (agents 3, 4)
-- `scope_gaps` — missing required systems (agent 7)
+- `scope_gaps` — missing required systems (agent 7, 17)
 - `project_risk` — commodity exposure analysis (agent 6)
 - `alternatives` — cheaper material alternatives (agent 9)
+- `labor_costs` — crew plans, productivity, site adjustments (agent 10)
+- `procurement` — supplier groupings, bulk discounts, lead times (agent 11)
+- `value_engineering` — VE findings and approved substitutions (agent 12)
+- `project_timeline` — phase schedule, critical path, milestones (agent 13)
+- `subcontractor_split` — BOQ split by trade/subcontractor (agent 14)
+- `material_price_history` — historical price updates from AI manager (agent 15)
+- `boq_documents` — formatted BOQ HTML documents (agent 16)
 
 ## Key Commands
 
@@ -84,7 +106,7 @@ A professional multi-agent AI system that automatically prices electrical projec
 - Use `zod/v4` (NOT `zod`) in all DB schema files
 - Import `.js` extension in ESM API server imports
 - DB package: `@workspace/db`; run migrations from `lib/db/` directory
-- `@workspace/integrations-anthropic-ai` provides `anthropic` client and `batchProcess` helper
+- `@workspace/integrations-anthropic-ai` provides **named export** `{ anthropic }` (NOT default import)
 - Drizzle v2: use `and()` combinator for multiple WHERE conditions
 - Agent job status tracked in-memory Map in `agents.ts` router; no Redis needed
 - Proxy: frontend `/`, API `/api`; use `localhost:80` for curl
@@ -112,8 +134,23 @@ A professional multi-agent AI system that automatically prices electrical projec
 - `POST /api/projects/:id/agents/scope-analysis` — Agent 7: Scope Gap Analyzer
 - `POST /api/projects/:id/agents/negotiation` — Agent 8: Negotiation Strategy
 - `POST /api/projects/:id/agents/alternatives` — Agent 9: Alternative Materials
-- `POST /api/projects/:id/agents/run-all` — Run all 9 agents in smart sequence
+- `POST /api/projects/:id/agents/labor-optimizer` — Agent 10: Labor Cost Optimizer
+- `POST /api/projects/:id/agents/procurement` — Agent 11: Procurement & Supplier Grouping
+- `POST /api/projects/:id/agents/value-engineering` — Agent 12: Value Engineering
+- `POST /api/projects/:id/agents/timeline` — Agent 13: Project Timeline & Phasing
+- `POST /api/projects/:id/agents/subcontractor-split` — Agent 14: Subcontractor BOQ Split
+- `POST /api/projects/:id/agents/boq-formatter` — Agent 16: BOQ Document Formatter
+- `POST /api/projects/:id/agents/boq-reviewer` — Agent 17: BOQ Technical Reviewer
+- `POST /api/projects/:id/agents/run-all` — Run all 17 agents in 5-stage sequence
 - `GET /api/projects/:id/agents/status` — All agent job statuses
+
+### Materials Manager (Agent 15 — global, no project ID)
+- `POST /api/agents/materials-price-update` — Trigger AI price update job
+- `GET /api/agents/materials-price-update/status` — Job status + last run info
+
+### BOQ Document
+- `GET /api/projects/:id/boq-document` — Latest BOQ document record
+- `GET /api/projects/:id/boq-document/html` — Rendered BOQ HTML (print-ready)
 
 ### Intelligence Data
 - `GET /api/projects/:id/price-reviews` — Agent findings (filter: ?agent=&severity=)
@@ -122,3 +159,8 @@ A professional multi-agent AI system that automatically prices electrical projec
 - `GET /api/projects/:id/risk` — Risk analysis result
 - `GET /api/projects/:id/alternatives` — Alternative materials
 - `GET /api/projects/:id/takeoff` — Material takeoff breakdown
+- `GET /api/projects/:id/labor` — Labor optimization result
+- `GET /api/projects/:id/procurement` — Procurement grouping result
+- `GET /api/projects/:id/value-engineering` — VE findings
+- `GET /api/projects/:id/timeline` — Project timeline/phases
+- `GET /api/projects/:id/subcontractor-split` — Subcontractor BOQ split
