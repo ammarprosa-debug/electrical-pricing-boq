@@ -3,13 +3,24 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Electrical Project Pricing AI System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: projects
+    description: Pricing projects management
+  - name: boq
+    description: BOQ items management
+  - name: pricing
+    description: Pricing operations
+  - name: reports
+    description: Report generation
+  - name: materials
+    description: Materials database
+
 paths:
   /healthz:
     get:
@@ -24,6 +35,305 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all pricing projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new pricing project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get project by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDetail"
+        "404":
+          description: Not found
+
+  /projects/{id}/upload:
+    post:
+      operationId: uploadBoqFile
+      tags: [projects]
+      summary: Upload BOQ file for parsing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required: [file]
+      responses:
+        "200":
+          description: File uploaded and parsed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+
+  /projects/{id}/price:
+    post:
+      operationId: startPricing
+      tags: [pricing]
+      summary: Start AI pricing pipeline for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PricingOptions"
+      responses:
+        "200":
+          description: Pricing job started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PricingJob"
+
+  /projects/{id}/status:
+    get:
+      operationId: getPricingStatus
+      tags: [pricing]
+      summary: Get pricing job status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Pricing status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PricingStatus"
+
+  /projects/{id}/boq:
+    get:
+      operationId: listBoqItems
+      tags: [boq]
+      summary: List BOQ items for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: BOQ items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BoqItem"
+
+  /boq/{itemId}:
+    put:
+      operationId: updateBoqItem
+      tags: [boq]
+      summary: Update a BOQ item (manual review/correction)
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBoqItemBody"
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoqItem"
+
+  /projects/{id}/summary:
+    get:
+      operationId: getProjectSummary
+      tags: [projects]
+      summary: Get project pricing summary with all 3 scenarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Pricing summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectSummary"
+
+  /projects/{id}/report/excel:
+    get:
+      operationId: downloadExcelReport
+      tags: [reports]
+      summary: Download Excel BOQ report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: scenario
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [economical, standard, premium]
+      responses:
+        "200":
+          description: Excel file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /projects/{id}/report/pdf:
+    get:
+      operationId: downloadPdfReport
+      tags: [reports]
+      summary: Download PDF executive summary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /projects/stats:
+    get:
+      operationId: getProjectsStats
+      tags: [projects]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /projects/{id}/review-queue:
+    get:
+      operationId: getReviewQueue
+      tags: [projects]
+      summary: Get items needing human review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Items needing review
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BoqItem"
+
+  /materials:
+    get:
+      operationId: listMaterials
+      tags: [materials]
+      summary: List materials from the pricing database
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Materials list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Material"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +344,380 @@ components:
       required:
         - status
 
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nameAr:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, parsing, pricing, reviewing, completed, failed]
+        region:
+          type: string
+          enum: [riyadh, jeddah, dammam, other]
+        totalItems:
+          type: integer
+        pricedItems:
+          type: integer
+        reviewItems:
+          type: integer
+        totalEconomical:
+          type: number
+        totalStandard:
+          type: number
+        totalPremium:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - status
+        - createdAt
+
+    ProjectDetail:
+      allOf:
+        - $ref: "#/components/schemas/Project"
+        - type: object
+          properties:
+            boqItems:
+              type: array
+              items:
+                $ref: "#/components/schemas/BoqItem"
+
+    CreateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        nameAr:
+          type: string
+        description:
+          type: string
+        region:
+          type: string
+          enum: [riyadh, jeddah, dammam, other]
+      required:
+        - name
+        - region
+
+    UploadResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        itemsFound:
+          type: integer
+        message:
+          type: string
+        parseErrors:
+          type: array
+          items:
+            type: string
+      required:
+        - success
+        - itemsFound
+        - message
+
+    PricingOptions:
+      type: object
+      properties:
+        scenarios:
+          type: array
+          items:
+            type: string
+            enum: [economical, standard, premium]
+      required:
+        - scenarios
+
+    PricingJob:
+      type: object
+      properties:
+        jobId:
+          type: string
+        projectId:
+          type: integer
+        status:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+      required:
+        - jobId
+        - projectId
+        - status
+        - startedAt
+
+    PricingStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [idle, parsing, pricing, validating, completed, failed]
+        progress:
+          type: integer
+          description: Percentage 0-100
+        currentStep:
+          type: string
+        itemsTotal:
+          type: integer
+        itemsDone:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - status
+        - progress
+
+    BoqItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        itemNumber:
+          type: string
+        descriptionEn:
+          type: string
+        descriptionAr:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: number
+        categoryLevel1:
+          type: string
+        categoryLevel2:
+          type: string
+        categoryLevel3:
+          type: string
+        specs:
+          type: object
+          description: Extracted technical specifications
+        unitPriceEconomical:
+          type: number
+        unitPriceStandard:
+          type: number
+        unitPricePremium:
+          type: number
+        totalEconomical:
+          type: number
+        totalStandard:
+          type: number
+        totalPremium:
+          type: number
+        laborCost:
+          type: number
+        vatAmount:
+          type: number
+        confidenceScore:
+          type: number
+          description: AI confidence 0-100
+        complianceStatus:
+          type: string
+          enum: [pass, warning, fail, pending]
+        complianceNotes:
+          type: string
+        anomalyFlag:
+          type: boolean
+        anomalyReason:
+          type: string
+        needsReview:
+          type: boolean
+        pricingSource:
+          type: string
+          enum: [database, ai_haiku, ai_sonnet, manual, cache]
+        alternativeMaterial:
+          type: string
+        alternativeSaving:
+          type: number
+        status:
+          type: string
+          enum: [pending, priced, reviewed, approved]
+      required:
+        - id
+        - projectId
+        - descriptionEn
+        - unit
+        - quantity
+        - status
+
+    UpdateBoqItemBody:
+      type: object
+      properties:
+        unitPriceStandard:
+          type: number
+        unitPriceEconomical:
+          type: number
+        unitPricePremium:
+          type: number
+        descriptionAr:
+          type: string
+        complianceStatus:
+          type: string
+          enum: [pass, warning, fail, pending]
+        notes:
+          type: string
+        status:
+          type: string
+          enum: [pending, priced, reviewed, approved]
+
+    ProjectSummary:
+      type: object
+      properties:
+        projectId:
+          type: integer
+        totalItems:
+          type: integer
+        pricedItems:
+          type: integer
+        scenarios:
+          $ref: "#/components/schemas/PricingScenarios"
+        categoryBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryBreakdown"
+        complianceSummary:
+          $ref: "#/components/schemas/ComplianceSummary"
+        reviewQueue:
+          type: integer
+      required:
+        - projectId
+        - totalItems
+        - pricedItems
+        - scenarios
+        - categoryBreakdown
+
+    PricingScenarios:
+      type: object
+      properties:
+        economical:
+          $ref: "#/components/schemas/ScenarioTotal"
+        standard:
+          $ref: "#/components/schemas/ScenarioTotal"
+        premium:
+          $ref: "#/components/schemas/ScenarioTotal"
+      required:
+        - economical
+        - standard
+        - premium
+
+    ScenarioTotal:
+      type: object
+      properties:
+        subtotal:
+          type: number
+        laborTotal:
+          type: number
+        vatTotal:
+          type: number
+        grandTotal:
+          type: number
+      required:
+        - subtotal
+        - laborTotal
+        - vatTotal
+        - grandTotal
+
+    CategoryBreakdown:
+      type: object
+      properties:
+        category:
+          type: string
+        itemCount:
+          type: integer
+        totalStandard:
+          type: number
+        percentage:
+          type: number
+      required:
+        - category
+        - itemCount
+        - totalStandard
+        - percentage
+
+    ComplianceSummary:
+      type: object
+      properties:
+        pass:
+          type: integer
+        warning:
+          type: integer
+        fail:
+          type: integer
+        pending:
+          type: integer
+      required:
+        - pass
+        - warning
+        - fail
+        - pending
+
+    DashboardStats:
+      type: object
+      properties:
+        totalProjects:
+          type: integer
+        completedProjects:
+          type: integer
+        inProgressProjects:
+          type: integer
+        totalItemsPriced:
+          type: integer
+        avgConfidenceScore:
+          type: number
+        recentProjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+      required:
+        - totalProjects
+        - completedProjects
+        - inProgressProjects
+        - totalItemsPriced
+        - avgConfidenceScore
+        - recentProjects
+
+    Material:
+      type: object
+      properties:
+        id:
+          type: integer
+        nameEn:
+          type: string
+        nameAr:
+          type: string
+        category:
+          type: string
+        unit:
+          type: string
+        priceEconomical:
+          type: number
+        priceStandard:
+          type: number
+        pricePremium:
+          type: number
+        sasoApproved:
+          type: boolean
+        lastUpdated:
+          type: string
+          format: date-time
+      required:
+        - id
+        - nameEn
+        - category
+        - unit
+        - priceStandard
