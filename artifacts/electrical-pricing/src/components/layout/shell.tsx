@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, FolderKanban, Database, Settings,
-  Bot, BarChart3, ChevronRight, Zap
+  Bot, BarChart3, ChevronRight, Zap, BrainCircuit
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useHealthCheck } from "@workspace/api-client-react";
@@ -23,6 +23,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       items: [
         { href: "/agents", label: "وكلاء الذكاء", labelEn: "AI Agents", icon: Bot },
         { href: "/takeoff", label: "تفصيل المواد", labelEn: "Material Takeoff", icon: BarChart3 },
+        { href: "/intelligence", label: "استخبارات المشروع", labelEn: "Project Intelligence", icon: BrainCircuit },
         { href: "/materials", label: "قاعدة الأسعار", labelEn: "Price Database", icon: Database },
       ],
     },

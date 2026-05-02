@@ -6,3 +6,6 @@ export * from "./boqItems";
 export * from "./materials";
 export * from "./priceReviews";
 export * from "./materialTakeoff";
+export * from "./scopeGaps";
+export * from "./projectRisk";
+export * from "./alternatives";

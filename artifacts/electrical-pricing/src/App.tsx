@@ -13,6 +13,7 @@ import ProjectReview from "@/pages/project-review";
 import Materials from "@/pages/materials";
 import AgentsPage from "@/pages/agents";
 import TakeoffPage from "@/pages/takeoff";
+import IntelligencePage from "@/pages/intelligence";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ function Router() {
         <Route path="/materials" component={Materials} />
         <Route path="/agents" component={AgentsPage} />
         <Route path="/takeoff" component={TakeoffPage} />
+        <Route path="/intelligence" component={IntelligencePage} />
         <Route component={NotFound} />
       </Switch>
     </Shell>
