@@ -20,7 +20,7 @@ export default function ProjectDetail() {
 
   const { data: project, isLoading: projectLoading } = useGetProject(projectId);
   const { data: items } = useListBoqItems(projectId);
-  const { data: summary } = useGetProjectSummary(projectId, { query: { enabled: project?.status === 'completed' } });
+  const { data: summary } = useGetProjectSummary(projectId, { query: { enabled: project?.status === 'completed' || project?.status === 'reviewing' } });
   
   const uploadMutation = useUploadBoqFile();
   const startPricingMutation = useStartPricing();
@@ -38,10 +38,10 @@ export default function ProjectDetail() {
 
   // Watch status to stop polling and refetch project
   useEffect(() => {
-    if (statusData?.status === 'completed' || statusData?.status === 'failed') {
+    if (statusData?.status === 'completed' || statusData?.status === 'reviewing' || statusData?.status === 'failed') {
       setIsPolling(false);
       queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
-      if (statusData.status === 'completed') {
+      if (statusData.status === 'completed' || statusData.status === 'reviewing') {
         toast({ title: "Pricing Complete", description: "BOQ pricing has finished successfully." });
       } else {
         toast({ title: "Pricing Failed", description: "An error occurred during pricing.", variant: "destructive" });
@@ -85,14 +85,14 @@ export default function ProjectDetail() {
   };
 
   const downloadExcel = () => {
-    window.location.href = `/api/projects/${projectId}/reports/excel?scenario=standard`;
+    window.location.href = `/api/projects/${projectId}/report/excel?scenario=standard`;
   };
 
   const downloadPdf = () => {
-    window.location.href = `/api/projects/${projectId}/reports/pdf`;
+    window.location.href = `/api/projects/${projectId}/report/pdf`;
   };
 
-  const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+  const COLORS = ['#1e3a5f', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#ec4899'];
 
   if (projectLoading) return <div className="p-8">Loading...</div>;
   if (!project) return <div className="p-8">Project not found</div>;
@@ -112,7 +112,7 @@ export default function ProjectDetail() {
           <Badge variant="outline" className="ml-2 capitalize">{project.status}</Badge>
         </div>
         <div className="flex items-center gap-2">
-          {project.status === 'completed' && (
+          {(project.status === 'completed' || project.status === 'reviewing') && (
             <>
               <Button variant="outline" size="sm" onClick={downloadExcel}>
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
@@ -291,30 +291,26 @@ export default function ProjectDetail() {
                     <CardTitle className="text-sm">Category Breakdown</CardTitle>
                   </CardHeader>
                   <CardContent className="flex justify-center pb-2 pt-4">
-                    <div className="h-[140px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={summary.categoryBreakdown}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={40}
-                            outerRadius={60}
-                            paddingAngle={2}
-                            dataKey="totalStandard"
-                            stroke="none"
-                          >
-                            {summary.categoryBreakdown.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value: number) => [`${value.toLocaleString()} SAR`, 'Standard']}
-                            contentStyle={{ fontSize: '12px' }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
+                    <PieChart width={240} height={160}>
+                        <Pie
+                          data={summary.categoryBreakdown}
+                          cx={120}
+                          cy={80}
+                          innerRadius={40}
+                          outerRadius={65}
+                          paddingAngle={2}
+                          dataKey="totalStandard"
+                          stroke="none"
+                        >
+                          {summary.categoryBreakdown.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: number) => [`${value.toLocaleString()} SAR`, 'Standard']}
+                          contentStyle={{ fontSize: '11px' }}
+                        />
+                      </PieChart>
                   </CardContent>
                 </Card>
               )}

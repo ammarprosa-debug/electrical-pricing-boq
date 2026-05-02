@@ -184,19 +184,33 @@ Return JSON array with same indices:
       altSav?: number;
     }> = JSON.parse(jsonMatch[0]);
 
+    const parseNum = (v: unknown): number => {
+      if (v == null) return 0;
+      if (typeof v === "number") return v;
+      return parseFloat(String(v).replace(/[^0-9.-]/g, "")) || 0;
+    };
+    const parseCompliance = (v: unknown): string => {
+      const s = String(v || "").toLowerCase();
+      if (s.includes("fail")) return "fail";
+      if (s.includes("warn")) return "warning";
+      if (s.includes("pass")) return "pass";
+      return "pass";
+    };
+
     return items.map((_, idx) => {
       const p = parsed.find(x => x.i === idx);
       if (!p) return { economical: 0, standard: 0, premium: 0, confidence: 0, compliance: "pending", complianceNotes: "Failed to price", source: "ai_haiku" };
+      const altSavNum = p.altSav != null ? parseNum(p.altSav) : undefined;
       return {
-        economical: p.eco || 0,
-        standard: p.std || 0,
-        premium: p.pre || 0,
-        confidence: p.conf || 50,
-        compliance: p.comp || "pending",
-        complianceNotes: p.compNotes || "",
+        economical: parseNum(p.eco),
+        standard: parseNum(p.std),
+        premium: parseNum(p.pre),
+        confidence: parseNum(p.conf) || 50,
+        compliance: parseCompliance(p.comp),
+        complianceNotes: String(p.compNotes || "").slice(0, 500),
         source: "ai_haiku",
-        alternative: p.alt || undefined,
-        alternativeSaving: p.altSav || undefined,
+        alternative: p.alt ? String(p.alt).slice(0, 200) : undefined,
+        alternativeSaving: altSavNum != null && !isNaN(altSavNum) ? altSavNum : undefined,
       };
     });
   } catch (err) {
