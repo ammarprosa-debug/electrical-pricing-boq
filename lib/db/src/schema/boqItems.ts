@@ -35,6 +35,7 @@ export const boqItemsTable = pgTable("boq_items", {
   pricingSource: pricingSourceEnum("pricing_source"),
   alternativeMaterial: text("alternative_material"),
   alternativeSaving: real("alternative_saving"),
+  discipline: text("discipline"),
   sectionName: text("section_name"),
   supplierName: text("supplier_name"),
   supplyPrice: real("supply_price"),
