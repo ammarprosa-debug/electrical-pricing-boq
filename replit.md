@@ -94,6 +94,32 @@ A professional multi-agent AI system that automatically prices electrical projec
 - `material_price_history` — historical price updates from AI manager (agent 15)
 - `boq_documents` — formatted BOQ HTML documents (agent 16)
 
+## GitHub Auto-Sync
+
+Every Replit commit is automatically pushed to GitHub via a git post-commit hook.
+
+### Required secrets / env vars
+| Name | Type | Description |
+|------|------|-------------|
+| `GITHUB_TOKEN` | Secret | GitHub Personal Access Token with `repo` (full) scope |
+| `GITHUB_REPO_URL` | Shared env var | Target repo URL, e.g. `https://github.com/ammarprosa-debug/electrical-pricing-boq` |
+
+### How it works
+1. `scripts/github-sync-hook.sh` — the sync script. Reads `GITHUB_TOKEN` + `GITHUB_REPO_URL`, configures a `github` git remote with token-based authentication, and pushes the current branch. Skips silently if either variable is missing.
+2. `scripts/install-github-hook.sh` — installs the above script as `.git/hooks/post-commit`. Run this manually if you clone the repo or if the hook disappears.
+3. `scripts/post-merge.sh` — runs the installer automatically after every task merge so the hook survives Replit's merge process.
+
+### Re-installing the hook manually
+```bash
+bash scripts/install-github-hook.sh
+```
+
+### Troubleshooting
+- **Push skipped** — check that both `GITHUB_TOKEN` and `GITHUB_REPO_URL` are set (Replit Secrets / Env Vars panel).
+- **Permission denied / 403** — ensure `GITHUB_TOKEN` has `repo` write scope and hasn't expired. Rotate it at https://github.com/settings/tokens.
+- **Repository not found** — verify `GITHUB_REPO_URL` is the full `https://github.com/owner/repo` URL (no trailing slash, no embedded credentials).
+- **Push protection blocked** — GitHub detected a secret in a historical commit. Remove it from history or allow it at the URL shown in the error.
+
 ## Key Commands
 
 - `pnpm run typecheck` — full typecheck across all packages
