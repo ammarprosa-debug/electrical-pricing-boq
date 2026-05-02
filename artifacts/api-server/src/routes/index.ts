@@ -6,6 +6,7 @@ import pricingRouter from "./pricing";
 import materialsRouter from "./materials";
 import reportsRouter from "./reports";
 import rfqRouter from "./rfq";
+import agentsRouter from "./agents";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(pricingRouter);
 router.use(materialsRouter);
 router.use(reportsRouter);
 router.use(rfqRouter);
+router.use(agentsRouter);
 
 export default router;

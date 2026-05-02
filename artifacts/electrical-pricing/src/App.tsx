@@ -6,12 +6,13 @@ import { ThemeProvider } from "next-themes";
 import NotFound from "@/pages/not-found";
 import { Shell } from "@/components/layout/shell";
 
-// Placeholders for pages we will create
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
 import ProjectReview from "@/pages/project-review";
 import Materials from "@/pages/materials";
+import AgentsPage from "@/pages/agents";
+import TakeoffPage from "@/pages/takeoff";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,8 @@ function Router() {
         <Route path="/projects/:id" component={ProjectDetail} />
         <Route path="/projects/:id/review" component={ProjectReview} />
         <Route path="/materials" component={Materials} />
+        <Route path="/agents" component={AgentsPage} />
+        <Route path="/takeoff" component={TakeoffPage} />
         <Route component={NotFound} />
       </Switch>
     </Shell>

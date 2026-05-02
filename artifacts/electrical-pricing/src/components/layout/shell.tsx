@@ -1,5 +1,8 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, FolderKanban, Database, Settings, Activity } from "lucide-react";
+import {
+  LayoutDashboard, FolderKanban, Database, Settings,
+  Bot, BarChart3, ChevronRight, Zap
+} from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useHealthCheck } from "@workspace/api-client-react";
 
@@ -7,59 +10,92 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { data: health } = useHealthCheck({ query: { refetchInterval: 30000 } });
 
-  const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/projects", label: "Projects", icon: FolderKanban },
-    { href: "/materials", label: "Materials", icon: Database },
+  const navGroups = [
+    {
+      label: "النظام",
+      items: [
+        { href: "/", label: "لوحة التحكم", labelEn: "Dashboard", icon: LayoutDashboard },
+        { href: "/projects", label: "المشاريع", labelEn: "Projects", icon: FolderKanban },
+      ],
+    },
+    {
+      label: "التحليل الذكي",
+      items: [
+        { href: "/agents", label: "وكلاء الذكاء", labelEn: "AI Agents", icon: Bot },
+        { href: "/takeoff", label: "تفصيل المواد", labelEn: "Material Takeoff", icon: BarChart3 },
+        { href: "/materials", label: "قاعدة الأسعار", labelEn: "Price Database", icon: Database },
+      ],
+    },
   ];
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-sidebar flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 border-b shrink-0">
-          <div className="w-6 h-6 bg-primary rounded-sm mr-3"></div>
-          <h1 className="font-bold text-lg tracking-tight text-sidebar-foreground">Goval BOQ</h1>
+      <aside className="w-[220px] border-r bg-[#0f1729] flex flex-col shrink-0">
+        {/* Logo */}
+        <div className="h-14 flex items-center px-4 border-b border-white/10 shrink-0">
+          <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center mr-2.5 shadow-lg">
+            <Zap className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h1 className="font-bold text-sm text-white leading-none">Goval BOQ</h1>
+            <p className="text-[10px] text-blue-300/70 leading-none mt-0.5">نظام التسعير الكهربائي</p>
+          </div>
         </div>
-        <nav className="flex-1 py-4 overflow-y-auto">
-          <ul className="space-y-1 px-3">
-            {navItems.map((item) => {
-              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      isActive 
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground" 
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4 mr-3" />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+
+        {/* Nav */}
+        <nav className="flex-1 py-3 overflow-y-auto">
+          {navGroups.map(group => (
+            <div key={group.label} className="mb-4">
+              <p className="text-[10px] font-semibold text-blue-300/50 uppercase tracking-widest px-4 mb-1">{group.label}</p>
+              <ul className="space-y-0.5 px-2">
+                {group.items.map(item => {
+                  const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`flex items-center justify-between px-3 py-2 text-xs font-medium rounded-md transition-all group ${
+                          isActive
+                            ? "bg-blue-600/30 text-blue-200 border border-blue-500/30"
+                            : "text-slate-400 hover:bg-white/5 hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <item.icon className={`w-3.5 h-3.5 ${isActive ? "text-blue-300" : "text-slate-500 group-hover:text-slate-300"}`} />
+                          <div>
+                            <div>{item.label}</div>
+                            <div className={`text-[9px] ${isActive ? "text-blue-300/70" : "text-slate-600 group-hover:text-slate-500"}`}>{item.labelEn}</div>
+                          </div>
+                        </div>
+                        {isActive && <ChevronRight className="w-3 h-3 text-blue-400" />}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
-        <div className="p-4 border-t shrink-0">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center text-sm font-medium text-sidebar-foreground">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+
+        {/* Footer */}
+        <div className="p-3 border-t border-white/10 shrink-0">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center text-xs font-medium text-slate-400">
+              <Settings className="w-3.5 h-3.5 mr-1.5" />
+              الإعدادات
             </div>
             <ThemeToggle />
           </div>
-          <div className="flex items-center text-xs text-muted-foreground">
-            <div className={`w-2 h-2 rounded-full mr-2 ${health?.status === 'ok' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            API Status: {health?.status === 'ok' ? 'Online' : 'Offline'}
+          <div className={`flex items-center text-[10px] px-2 py-1 rounded ${health?.status === "ok" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>
+            <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${health?.status === "ok" ? "bg-green-400 animate-pulse" : "bg-red-400"}`} />
+            {health?.status === "ok" ? "الخادم متصل" : "الخادم غير متصل"}
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Main */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50/40 dark:bg-background">
         {children}
       </main>
     </div>
