@@ -45,6 +45,7 @@ router.post("/projects/:id/upload", upload.single("file"), async (req, res) => {
         projectId: id,
         itemNumber: item.itemNumber || `${idx + 1}`,
         descriptionEn: item.description,
+        descriptionAr: (item as any).descriptionAr || null,
         unit: item.unit || "No",
         quantity: item.quantity || 1,
         categoryLevel1: classifyItem(item.description),
@@ -118,26 +119,75 @@ async function parseBoqFile(file: Express.Multer.File): Promise<{ itemNumber?: s
   return items;
 }
 
-function parseCsv(content: string): { itemNumber?: string; description: string; unit?: string; quantity?: number }[] {
-  const lines = content.split("\n").filter(l => l.trim());
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""));
-  const descIdx = headers.findIndex(h => h.includes("desc") || h.includes("item") || h.includes("work"));
-  const qtyIdx = headers.findIndex(h => h.includes("qty") || h.includes("quant"));
-  const unitIdx = headers.findIndex(h => h.includes("unit"));
-  const numIdx = headers.findIndex(h => h === "no" || h === "no." || h === "#" || h === "item no");
+function parseCsvLine(line: string): string[] {
+  const cols: string[] = [];
+  let cur = "";
+  let inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuote = !inQuote; continue; }
+    if (ch === "," && !inQuote) { cols.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
+  }
+  cols.push(cur.trim());
+  return cols;
+}
 
-  return lines.slice(1).map(line => {
-    const cols = line.split(",").map(c => c.trim().replace(/"/g, ""));
-    const description = cols[descIdx >= 0 ? descIdx : 1] || "";
-    if (!description || description.length < 3) return null;
-    return {
+function parseCsv(content: string): { itemNumber?: string; description: string; descriptionAr?: string; unit?: string; quantity?: number }[] {
+  // Normalize line endings
+  const lines = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  const rawHeaders = parseCsvLine(lines[0]);
+  const headers = rawHeaders.map(h => h.toLowerCase().replace(/['"]/g, "").trim());
+
+  // Priority order: prefer explicit "description" / "وصف" / "بيان" over generic "item"
+  const descPriority = ["description", "desc", "item description", "work description", "وصف", "بيان العمل", "البند", "الوصف"];
+  const descArPriority = ["description ar", "arabic description", "الوصف العربي", "وصف عربي", "description arabic"];
+  const qtyPriority = ["quantity", "qty", "الكمية", "كمية"];
+  const unitPriority = ["unit", "uom", "الوحدة", "وحدة"];
+  const numPriority = ["no", "no.", "#", "item no", "item number", "رقم", "م"];
+
+  const findIdx = (priority: string[]) => {
+    for (const key of priority) {
+      const idx = headers.findIndex(h => h === key || h.includes(key));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const descIdx = findIdx(descPriority);
+  const descArIdx = findIdx(descArPriority);
+  const qtyIdx = findIdx(qtyPriority);
+  const unitIdx = findIdx(unitPriority);
+  const numIdx = findIdx(numPriority);
+
+  // Fallback: use column 1 (index 1) as description if nothing matched or matched col 0 only
+  const effectiveDescIdx = descIdx > 0 ? descIdx : (descIdx === 0 && headers.length > 1 ? 1 : descIdx);
+
+  const results: { itemNumber?: string; description: string; descriptionAr?: string; unit?: string; quantity?: number }[] = [];
+
+  for (const line of lines.slice(1)) {
+    if (!line.trim()) continue;
+    const cols = parseCsvLine(line);
+    const description = (effectiveDescIdx >= 0 ? cols[effectiveDescIdx] : cols[1] || cols[0]) || "";
+    // Skip header-like rows or empty descriptions
+    if (!description || description.length < 2) continue;
+    if (description.toLowerCase().match(/^(description|desc|item|وصف|بيان)$/)) continue;
+
+    const descAr = descArIdx >= 0 ? cols[descArIdx] : undefined;
+    const rawQty = qtyIdx >= 0 ? cols[qtyIdx] : undefined;
+    const qty = rawQty ? parseFloat(rawQty.replace(/[^0-9.]/g, "")) : NaN;
+
+    results.push({
       itemNumber: numIdx >= 0 ? cols[numIdx] : undefined,
       description,
-      unit: unitIdx >= 0 ? cols[unitIdx] : "No",
-      quantity: qtyIdx >= 0 ? parseFloat(cols[qtyIdx]) || 1 : 1,
-    };
-  }).filter(Boolean) as any[];
+      descriptionAr: descAr && descAr.length > 1 ? descAr : undefined,
+      unit: unitIdx >= 0 ? cols[unitIdx] || "No" : "No",
+      quantity: !isNaN(qty) && qty > 0 ? qty : 1,
+    });
+  }
+  return results;
 }
 
 function classifyItem(description: string): string {
